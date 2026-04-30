@@ -36,7 +36,7 @@ setwd('/Users/rcorgel/Library/CloudStorage/GoogleDrive-rcc92@georgetown.edu/.sho
 #########################
 
 # Load FLU SURV-NET National Data
-surv_nat <- read.csv('./raw/FluSurveillance_Custom_Download_Data.csv', skip = 2, header = TRUE, sep = ',')
+surv_nat <- read.csv('./raw/FluSurveillance_Custom_Download_Data (4).csv', skip = 2, header = TRUE, sep = ',')
 
 # Limit to all all individuals and all subtypes
 surv_nat <- surv_nat |> dplyr::filter(AGE.CATEGORY == 'Overall') |>
@@ -51,7 +51,7 @@ surv_nat$week_date = sub("(\\d{4}-)(\\d{2})", "\\1W\\2-1", surv_nat$year_week)
 surv_nat$week_date = ISOweek2date(surv_nat$week_date)
 
 # Select certain variables of interest
-surv_nat_clean <- surv_nat[, c(11, 16)]
+surv_nat_clean <- surv_nat[, c(11, 19)]
 
 # Rename and fill variables
 surv_nat_clean <- surv_nat_clean |>
@@ -63,12 +63,15 @@ surv_nat_clean <- surv_nat_clean |>
 surv_nat_clean$month <- month(surv_nat_clean$week_date)
 surv_nat_clean$year <- year(surv_nat_clean$week_date)
 
+surv_nat_clean <- surv_nat_clean |> 
+  dplyr::filter(week_date > as.Date('2016-06-01')) 
+
 # Subset data to July and calculate the July mean
 surv_summer <- surv_nat_clean |> 
   dplyr::filter(month < 11 & month > 9) |> group_by(year) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
-  mutate(surv_summ_mean = mean(unweighted_flu_surv)) |>
+  dplyr::filter(year < 2024) |>
+  mutate(surv_summ_mean = mean(as.numeric(unweighted_flu_surv), na.rm = T)) |>
   distinct(year, surv_summ_mean)
 
 # Merge on summer data to the correct season (summer 2016 should align with the 2016-2017 flu season)
@@ -84,16 +87,15 @@ surv_nat_clean <- surv_nat_clean |>
 
 # Calculate rolling average
 surv_nat_clean <- surv_nat_clean |>
-  mutate(roll_surv = rollmean(unweighted_flu_surv, 3, fill = NA, align = 'right'))
+  mutate(roll_surv = rollmean(as.numeric(unweighted_flu_surv), 3, fill = NA, align = 'right'))
 
 # Limit data to 2016 to 2020
 surv_nat_clean <- surv_nat_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score
-surv_nat_clean$z_score <- (surv_nat_clean$unweighted_flu_surv - 
-                            surv_nat_clean$surv_summ_mean) / sd(surv_nat_clean$unweighted_flu_surv, na.rm = TRUE)
+surv_nat_clean$z_score <- (as.numeric(surv_nat_clean$unweighted_flu_surv) - 
+                            surv_nat_clean$surv_summ_mean) / sd(as.numeric(surv_nat_clean$unweighted_flu_surv), na.rm = TRUE)
 surv_nat_clean$z_score_roll <- (surv_nat_clean$roll_surv - 
                                   surv_nat_clean$surv_summ_mean) / sd(surv_nat_clean$roll_surv, na.rm = TRUE)
 
@@ -106,8 +108,8 @@ surv_final$Source <- 'FluSurv-NET'
 
 # A quick visual
 ggplot(surv_final) + 
-  geom_line(aes(x = week_date, y = value), color = 'blue') +
-  geom_line(aes(x = week_date, y = value_roll), color = 'red')
+  geom_line(aes(x = week_date, y = as.numeric(value)), color = 'blue') +
+  geom_line(aes(x = week_date, y = as.numeric(value_roll)), color = 'red')
 
 # Save
 saveRDS(surv_final, './tmp/flu_surv_net_national.rds')
@@ -117,7 +119,7 @@ saveRDS(surv_final, './tmp/flu_surv_net_national.rds')
 ######################
 
 # Load FLU SURV-NET State Data
-surv_state <- read.csv('./raw/FluSurveillance_Custom_Download_Data (3).csv', skip = 2, header = TRUE, sep = ',')
+surv_state <- read.csv('./raw/FluSurveillance_Custom_Download_Data (5).csv', skip = 2, header = TRUE, sep = ',')
 
 # Limit to all all individuals and all subtypes
 surv_state <- surv_state |> dplyr::filter(AGE.CATEGORY == 'Overall') |>
@@ -139,12 +141,17 @@ surv_state$state_fips <- ifelse(surv_state$CATCHMENT == 'New York - Rochester', 
 surv_state <- surv_state |> dplyr::filter(CATCHMENT != 'Entire Network')
 
 # Select certain variables of interest
-surv_state_clean <- surv_state[, c(1, 11, 16, 17)]
+surv_state_clean <- surv_state[, c(1, 11, 19, 20)]
 
 # Rename and fill variables
 surv_state_clean <- surv_state_clean |>
   rename('unweighted_flu_surv' = 'WEEKLY.RATE',
          'region' = 'CATCHMENT')
+
+# Change "null" listed values to 0 from 2020-21 season
+surv_state_clean$unweighted_flu_surv <- as.numeric(surv_state_clean$unweighted_flu_surv)
+surv_state_clean$unweighted_flu_surv <- ifelse(is.na(surv_state_clean$unweighted_flu_surv),
+                                               0, surv_state_clean$unweighted_flu_surv)
 
 # Create month and year variables
 surv_state_clean$month <- month(surv_state_clean$week_date)
@@ -154,7 +161,6 @@ surv_state_clean$year <- year(surv_state_clean$week_date)
 surv_state_summer <- surv_state_clean |> 
   dplyr::filter(month < 11 & month > 9) |> group_by(year, state_fips, region) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
   mutate(surv_summ_mean = mean(as.numeric(unweighted_flu_surv), na.rm = TRUE)) |>
   distinct(year, state_fips, region, surv_summ_mean)
 
@@ -182,7 +188,6 @@ surv_state_clean <- surv_state_clean |> group_by(region) |>
 
 # Limit data to 2016 to 2020
 surv_state_clean <- surv_state_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score

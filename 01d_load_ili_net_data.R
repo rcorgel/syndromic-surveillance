@@ -63,7 +63,7 @@ ili_nat_clean$year <- year(ili_nat_clean$week_date)
 ili_summer <- ili_nat_clean |> 
   dplyr::filter(month < 9 & month > 5) |> group_by(year) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
+  dplyr::filter(year < 2025) |>
   mutate(ili_summ_mean = mean(unweighted_ili_net)) |>
   distinct(year, ili_summ_mean)
 
@@ -77,7 +77,7 @@ ili_nat_clean <- ili_nat_clean |>
 
 # Limit data to 2016 to 2020
 ili_nat_clean <- ili_nat_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
+  dplyr::filter(week_date < as.Date('2023-08-30')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score
@@ -137,7 +137,6 @@ ili_state_clean$year <- year(ili_state_clean$week_date)
 ili_state_summer <- ili_state_clean |> 
   dplyr::filter(month < 9 & month > 5) |> group_by(year, state_fips) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
   mutate(ili_summ_mean = mean(as.numeric(unweighted_ili_net), na.rm = TRUE)) |>
   distinct(year, state_fips, ili_summ_mean)
 
@@ -153,7 +152,6 @@ ili_state_clean <- ili_state_clean |> group_by(state_fips) |>
 
 # Limit data to 2016 to 2020
 ili_state_clean <- ili_state_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score

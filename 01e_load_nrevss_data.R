@@ -62,7 +62,6 @@ nrevss_nat_clean$year <- year(nrevss_nat_clean$week_date)
 nrevss_summer <- nrevss_nat_clean |> 
   dplyr::filter(month < 9 & month > 5) |> group_by(year) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
   mutate(nrevss_summ_mean = mean(percent_positive_nrevss)) |>
   distinct(year, nrevss_summ_mean)
 
@@ -76,7 +75,6 @@ nrevss_nat_clean <- nrevss_nat_clean |>
 
 # Limit data to 2016 to 2020
 nrevss_nat_clean <- nrevss_nat_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score
@@ -133,7 +131,6 @@ nrevss_state_clean$year <- year(nrevss_state_clean$week_date)
 nrevss_state_summer <- nrevss_state_clean |> 
   dplyr::filter(month < 9 & month > 5) |> group_by(year, state_fips) |>
   dplyr::filter(year >= 2016) |>
-  dplyr::filter(year < 2020) |>
   mutate(nrevss_summ_mean = mean(as.numeric(percent_positive_nrevss), na.rm = TRUE)) |>
   distinct(year, state_fips, nrevss_summ_mean)
 
@@ -149,7 +146,6 @@ nrevss_state_clean <- nrevss_state_clean |> group_by(state_fips) |>
 
 # Limit data to 2016 to 2020
 nrevss_state_clean <- nrevss_state_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score
@@ -172,8 +168,8 @@ nrevss_state_final$Source <- 'NREVSS'
 # A quick visual
 # All states plus NYC have data besides Florida
 ggplot(nrevss_state_final) + 
-  geom_line(aes(x = week_date, y = value), color = 'blue') +
-  geom_line(aes(x = week_date, y = value_roll), color = 'red') +
+  geom_line(aes(x = week_date, y = z_score), color = 'blue') +
+  geom_line(aes(x = week_date, y = z_score_roll), color = 'red') +
   facet_wrap(~ region, nrow = 10, scales = 'free')
 
 # Save

@@ -94,7 +94,6 @@ nys_clean <- nys_clean |> group_by(county_fips) |>
 
 # Limit data to 2016 to 2020
 nys_clean <- nys_clean |> 
-  dplyr::filter(week_date < as.Date('2020-03-01')) |>
   dplyr::filter(week_date > as.Date('2016-08-31'))
 
 # Calculate Z score
