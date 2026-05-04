@@ -103,3 +103,68 @@ saveRDS(rsv_v2, 'tmp/rsv_sample_v2.rds')
 
 ################################################################################
 ################################################################################
+
+
+
+# 2016
+rsv_1 <- read_parquet('tmp/rsv_1_proc_p2.parquet')
+rsv_balanced_16 <- rsv_1 |> 
+  group_by(rsv) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(rsv_1)
+# 2017
+rsv_2 <- read_parquet('tmp/rsv_2_proc_p2.parquet')
+rsv_balanced_17 <- rsv_2 |> 
+  group_by(rsv) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(rsv_2)
+# 2018
+rsv_3 <- read_parquet('tmp/rsv_3_proc_p2.parquet')
+rsv_balanced_18 <- rsv_3 |> 
+  group_by(rsv) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(rsv_3)
+
+rsv_4 <- read_parquet('tmp/rsv_4_proc_p2.parquet')
+rsv_balanced_19 <- rsv_4 |> 
+  group_by(rsv) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(rsv_4)
+
+# Combine balanced data
+rsv_v1 <- rbind(rsv_balanced_16, rsv_balanced_17, rsv_balanced_18, rsv_balanced_19)
+
+
+
+
+saveRDS(rsv_v1, 'tmp/rsv_sample_v3.rds')
+
+
+rsv_v1$count <- 1
+rsv_test_colapse <- rsv_v1  |> 
+  group_by(county_fips, year_week_dt, age_grp, patient_gender_code, 
+           rsv, fever, cough, sore_throat, 
+           short_breath, hypoxemia, bronchitis,
+           loss_appetite, fatigue, headache,
+           congestion, sneezing) |>
+  mutate(patient_count = sum(count)) |>
+  distinct(county_fips, year_week_dt, age_grp, patient_gender_code, 
+           rsv, fever, cough, sore_throat, 
+           short_breath, hypoxemia, bronchitis,
+           loss_appetite, fatigue, headache,
+           congestion, sneezing, patient_count)
+
+
+
+write.csv(rsv_test_colapse, "syndromic-surveillance/data sample/rsv_sample", row.names = FALSE)
+
+
+
+
+
+
+

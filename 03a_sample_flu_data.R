@@ -250,3 +250,74 @@ saveRDS(flu_v5, 'tmp/flu_sample_v5.rds')
 
 ################################################################################
 ################################################################################
+
+flu_1 <- read_parquet('tmp/flu_1_proc_p2.parquet')
+flu_balanced_16 <- flu_1 |> 
+  group_by(flu) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(flu_1)
+# 2017
+flu_2 <- read_parquet('tmp/flu_2_proc_p2.parquet')
+flu_balanced_17 <- flu_2 |> 
+  group_by(flu) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(flu_2)
+# 2018
+flu_3 <- read_parquet('tmp/flu_3_proc_p2.parquet')
+flu_balanced_18 <- flu_3 |> 
+  group_by(flu) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(flu_3)
+# 2019
+flu_4 <- read_parquet('tmp/flu_4_proc_p2.parquet')
+flu_balanced_19 <- flu_4 |> 
+  group_by(flu) |> 
+  uncount(patient_count) |> 
+  sample_n(12500)
+remove(flu_4)
+
+
+
+
+
+
+
+
+
+# Combine balanced data
+flu_test <- rbind(flu_balanced_16, flu_balanced_17, flu_balanced_18, flu_balanced_19)
+
+flu_test$count <- 1
+flu_test_colapse <- flu_test |> 
+  group_by(county_fips, year_week_dt, age_grp, patient_gender_code, 
+           flu, fever, myalgia, cough, sore_throat, 
+           short_breath, hypoxemia, chest_pain, bronchitis,
+           nausea_vom, diarrhea, fatigue, headache,
+           congestion, sneezing) |>
+  mutate(patient_count = sum(count)) |>
+  distinct(county_fips, year_week_dt, age_grp, patient_gender_code, 
+           flu, fever, myalgia, cough, sore_throat, 
+           short_breath, hypoxemia, chest_pain, bronchitis,
+           nausea_vom, diarrhea, fatigue, headache,
+           congestion, sneezing, patient_count)
+  
+saveRDS(flu_test, 'tmp/flu_sample_v6.rds')
+
+
+write.csv(flu_test_colapse , "syndromic-surveillance/data sample/flu_sample", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
